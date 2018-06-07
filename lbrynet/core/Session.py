@@ -2,6 +2,7 @@ import logging
 import miniupnpc
 from twisted.internet import threads, defer
 from lbrynet.core.BlobManager import DiskBlobManager
+from lbrynet.core.DisabledNode import DummyNode, DummyAnnouncer
 from lbrynet.dht import node, hashannouncer
 from lbrynet.database.storage import SQLiteStorage
 from lbrynet.core.RateLimiter import RateLimiter
@@ -102,9 +103,7 @@ class Session(object):
         self.peer_finder = peer_finder
         self.hash_announcer = hash_announcer
         self.dht_node_port = dht_node_port
-        self.known_dht_nodes = known_dht_nodes
-        if self.known_dht_nodes is None:
-            self.known_dht_nodes = []
+        self.known_dht_nodes = known_dht_nodes or []
         self.blob_dir = blob_dir
         self.blob_manager = blob_manager
         self.blob_tracker = None
@@ -123,6 +122,9 @@ class Session(object):
         self.is_generous = is_generous
         self.storage = storage or SQLiteStorage(self.db_dir)
         self._join_dht_deferred = None
+
+        if dht_node_class == node.Node and not self.known_dht_nodes:
+            self.disable_dht()
 
     def setup(self):
         """Create the blob directory and database if necessary, start all desired services"""
@@ -220,6 +222,11 @@ class Session(object):
         d = threads.deferToThread(threaded_try_upnp)
         d.addErrback(upnp_failed)
         return d
+
+    def disable_dht(self):
+        log.info("DHT: Disabled. If this is unexpected, please check your 'known_dht_nodes' settings.")
+        self.dht_node_class = DummyNode
+        self.hash_announcer = DummyAnnouncer()
 
     def _setup_dht(self):  # does not block startup, the dht will re-attempt if necessary
         self.dht_node = self.dht_node_class(

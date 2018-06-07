@@ -19,7 +19,7 @@ class DummyPeerFinder(object):
     def stop(self):
         pass
 
-    def find_peers_for_blob(self, blob_hash):
+    def find_peers_for_blob(self, blob_hash, *args, **kwargs):
         return defer.succeed([])
 
     def get_most_popular_hashes(self, num_to_return):
