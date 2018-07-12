@@ -21,8 +21,8 @@ at anytime.
   *
 
 ### Changed
-  *
-  *
+  * consider only the DHT failures over the last 10 minutes, pruning the list on contact manager
+  * stops punishing good DHT nodes for returning banned/ignored nodes by filtering the results
 
 ### Added
   *
