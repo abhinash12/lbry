@@ -236,6 +236,9 @@ class Daemon(AuthJSONRPCServer):
 
     @defer.inlineCallbacks
     def setup(self):
+        from .watchdog import Watchdog
+        self.watchdog = Watchdog()
+        self.watchdog.start()
         reactor.addSystemEventTrigger('before', 'shutdown', self._shutdown)
         configure_loggly_handler()
 
@@ -413,6 +416,7 @@ class Daemon(AuthJSONRPCServer):
             stream.cancel(reason="daemon shutdown")
 
     def _shutdown(self):
+        self.watchdog.stop()
         # ignore INT/TERM signals once shutdown has started
         signal.signal(signal.SIGINT, self._already_shutting_down)
         signal.signal(signal.SIGTERM, self._already_shutting_down)
